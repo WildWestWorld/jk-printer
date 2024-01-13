@@ -309,6 +309,63 @@ void initBle()
 }
 // 蓝牙模块demo 止
 
+// 缺纸模块
+
+// 缺纸检测引脚
+#define PIN_PAPER 35
+// 打印头电源升压控制引脚
+#define PIN_VHEN 17
+
+typedef enum
+{
+  PAPER_STATUS_NORMAL = 0,
+  PAPER_STATUS_LACK = 1,
+} paper_state_e;
+
+paper_state_e status = PAPER_STATUS_NORMAL;
+
+void readPaperStatue()
+{
+  // if (digitalRead(PIN_PAPER) == PAPER_STATUS_NORMAL)
+  // {
+  //   Serial.printf("PAPER_STATUS_NORMAL\n");
+  //   status = PAPER_STATUS_NORMAL;
+  // }
+  // else
+  // {
+  //   Serial.printf("PAPER_STATUS_LACK\n");
+  //   status = PAPER_STATUS_LACK;
+  // }
+
+  if (digitalRead(PIN_PAPER) == PAPER_STATUS_LACK)
+  {
+    Serial.printf("PAPER_STATUS_LACK\n");
+    status = PAPER_STATUS_NORMAL;
+  }
+}
+// 这段代码是一个Arduino的中断服务例程（ISR）的定义。
+//ARDUINO_ISR_ATTR 宏来指定中断服务例程的属性。
+void ARDUINO_ISR_ATTR paperIsr()
+{
+  // 此处不可执行耗时操作
+  // Serial.printf("PAPER_STATUS_LACK\n");
+  status = PAPER_STATUS_LACK;
+}
+
+void initPaperStatus()
+{
+
+  // 打印机开始打印前，最重要的是判断之一是当前有没有缺打印纸，所以我们需要读取缺纸传感器的信号进行判断。
+  // 从这节课开始，我们需要接上打印模组，打印模组使用前有个注意点，VH电源在不打印时，需要保持关闭。
+  pinMode(PIN_VHEN, OUTPUT);
+  digitalWrite(PIN_VHEN, LOW);
+
+  // 缺纸IO初始化
+  pinMode(PIN_PAPER, INPUT);
+  // 如果PIN_PAPER 引脚 出现上升沿 就会触发 paperIsr 函数 就是变更 状态为缺纸
+  attachInterrupt(PIN_PAPER, paperIsr, RISING);
+}
+
 // setup 函数大概率不显示，实际上是运行了的
 void setup()
 {
@@ -317,7 +374,10 @@ void setup()
   // initButton();
 
   // 初始化蓝牙
-  initBle();
+  // initBle();
+
+  // 初始化缺纸检测
+  initPaperStatus();
 }
 
 void loop()
@@ -335,6 +395,10 @@ void loop()
   // readBattery();
 
   // 如果连入蓝牙，就会发送消息
-  delay(5000);
-  bleReport();
+  // delay(5000);
+  // bleReport();
+
+  // 读取 缺纸检测模块状态
+  delay(1000);
+  readPaperStatue();
 }
